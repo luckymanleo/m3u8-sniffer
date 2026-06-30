@@ -2,6 +2,9 @@
 *.log
 logs/
 
+# 本地配置文件（含用户扩展ID）
+extension_id.txt
+
 # 系统文件
 .DS_Store
 Thumbs.db
