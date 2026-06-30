@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node gen-icons.js)",
+      "Bash(xxd *)",
+      "Bash(node -e \"try { require\\('fs'\\).readFileSync\\('E:/tools/plugin/m3u8-sniffer/extension/manager/manager.js', 'utf8'\\); console.log\\('OK'\\); } catch\\(e\\) { console.log\\(e.message\\); }\")",
+      "Bash(node -c \"E:/tools/plugin/m3u8-sniffer/extension/manager/manager.js\")",
+      "Bash(taskkill -f -pid 5840)",
+      "Bash(taskkill -f -pid 12728)",
+      "Bash(taskkill -f -pid 24908)",
+      "Bash(wmic process *)",
+      "Bash(taskkill -f -im node.exe)",
+      "Bash(cmd /c install.bat)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(cmd /c \"install.bat\")",
+      "WebFetch(domain:porntrex-2026055.anjiu10.com)",
+      "Bash(curl -s -L --max-time 15 \"https://porntrex-2026055.anjiu10.com/video/3193166/skinny-barcelona-went-to-the-men-s-hostel-hard-and-first-double-penetration-nrx146\")",
+      "Bash(curl -s -L --max-time 15 -o /tmp/porntrex_page.html -w \"%{http_code} %{size_download}\" \"https://porntrex-2026055.anjiu10.com/video/3193166/skinny-barcelona-went-to-the-men-s-hostel-hard-and-first-double-penetration-nrx146\")",
+      "Read(//tmp/**)",
+      "Bash(node -e ' *)",
+      "Read(//e/tmp/**)",
+      "Bash(node *)",
+      "WebFetch(domain:legacy.sszn12.top)",
+      "Bash(curl -s --max-time 15 \"https://legacy.sszn12.top/video.php?id=22839952\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\")",
+      "Bash(curl -s --max-time 15 \"https://legacy.sszn12.top/video.php?id=22839952\")",
+      "Bash(curl -s --max-time 15 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/125.0.0.0 Safari/537.36\" -H \"Referer: https://legacy.sszn12.top/\" \"https://legacy.sszn12.top/video.php?id=22839952\")",
+      "Bash(curl -sI --max-time 10 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/125.0.0.0 Safari/537.36\" \"https://kjbwhcnao.com/20260524/6KXojEay/1000kb/hls/index.m3u8\")",
+      "Bash(curl -sI --max-time 10 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/125.0.0.0 Safari/537.36\" \"https://kjbwhcnao.com/20260524/6KXojEay/1000kb/hls/master.m3u8\")",
+      "Bash(curl -sI --max-time 10 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/125.0.0.0 Safari/537.36\" \"https://kjbwhcnao.com/20260524/6KXojEay/0e4pQybl.m3u8\")",
+      "Bash(curl -s --max-time 10 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/125.0.0.0 Safari/537.36\" -H \"Referer: https://legacy.sszn12.top/video.php?id=22839952\" \"https://voddadaizi.com:52866/videos/202503/27/67e53db64e7d663df43a2d6d/840500/index.m3u8\")",
+      "Bash(curl -sI --max-time 10 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/125.0.0.0 Safari/537.36\" -H \"Referer: https://legacy.sszn12.top/video.php?id=22839952\" \"https://voddadaizi.com:52866/videos/202503/27/67e53db64e7d663df43a2d6d/840500/index0.m3u8\")",
+      "Bash(curl -sI --max-time 10 -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/125.0.0.0 Safari/537.36\" \"https://voddadaizi.com:52866/videos/202503/27/67e53db64e7d663df43a2d6d/840500/index5.m3u8\")",
+      "mcp__codegraph__codegraph_files"
+    ]
+  }
+}

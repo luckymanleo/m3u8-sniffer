@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>M3U8 下载管理器</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .topbar {
+      background: #fff;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .topbar h1 { font-size: 18px; font-weight: 600; }
+    .topbar .stats { font-size: 13px; color: #666; }
+    .topbar .stats span { margin-left: 16px; }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .add-form {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .add-form h3 { font-size: 15px; margin-bottom: 14px; color: #333; }
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .form-group { flex: 1; min-width: 160px; }
+    .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: #1a73e8; }
+    .input-with-btn { display: flex; gap: 0; }
+    .input-with-btn input { border-radius: 6px 0 0 6px; border-right: none; }
+    .input-with-btn .btn { border-radius: 0 6px 6px 0; white-space: nowrap; flex-shrink: 0; }
+    .form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+    .btn {
+      padding: 8px 18px;
+      border: 1px solid #d0d5dd;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      background: #fff;
+      transition: all 0.15s;
+    }
+    .btn:hover { background: #f5f5f5; }
+    .btn-primary { background: #1a73e8; color: #fff; border-color: #1a73e8; }
+    .btn-primary:hover { background: #1557b0; }
+    .btn-danger { color: #d93025; border-color: #d93025; }
+    .btn-danger:hover { background: #fce8e6; }
+    .btn-success { background: #0f9d58; color: #fff; border-color: #0f9d58; }
+    .btn-success:hover { background: #0b8043; }
+
+    .task-list {}
+    .task-list h3 { font-size: 15px; margin-bottom: 12px; }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .search-bar input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-bar input:focus { border-color: #1a73e8; }
+    .search-bar input::placeholder { color: #aaa; }
+    .search-bar .status-filter select {
+      padding: 8px 12px;
+      border: 1px solid #d0d5dd;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      background: #fff;
+      cursor: pointer;
+    }
+    .search-bar .status-filter select:focus { border-color: #1a73e8; }
+
+    .task-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: box-shadow 0.15s, border-color 0.15s;
+      border: 2px solid transparent;
+      display: flex;
+      gap: 12px;
+    }
+    .task-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .task-card.selected { border-color: #1a73e8; background: #f0f6ff; }
+    .task-card-body { flex: 1; min-width: 0; }
+    .task-check {
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+    .task-check input {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #1a73e8;
+    }
+    .task-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .task-name {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .task-status {
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-weight: 500;
+      flex-shrink: 0;
+      margin-left: 10px;
+    }
+    .status-downloading { background: #e8f0fe; color: #1a73e8; }
+    .status-completed { background: #e6f4ea; color: #0f9d58; }
+    .status-failed { background: #fce8e6; color: #d93025; }
+    .status-pending { background: #fef7e0; color: #e37400; }
+    .status-paused { background: #f1f3f4; color: #5f6368; }
+
+    .task-info {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .task-info span { white-space: nowrap; }
+
+    .task-page-url {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f8f9fa;
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+    .task-page-url .page-url-text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .btn-mini {
+      font-size: 11px !important;
+      padding: 2px 8px !important;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: #e8eaed;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #1a73e8;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .progress-fill.completed { background: #0f9d58; }
+    .progress-fill.failed { background: #d93025; }
+
+    .task-actions { display: flex; gap: 6px; }
+    .task-actions .btn { font-size: 12px; padding: 4px 12px; }
+
+    .batch-bar {
+      background: #1a73e8;
+      color: #fff;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 10px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      position: sticky;
+      top: 68px;
+      z-index: 5;
+      box-shadow: 0 2px 8px rgba(26,115,232,0.3);
+    }
+    .batch-bar.visible { display: flex; }
+    .batch-bar .count { flex: 1; font-weight: 500; }
+    .batch-bar .btn {
+      padding: 4px 12px;
+      font-size: 12px;
+      border-color: rgba(255,255,255,0.5);
+      color: #fff;
+      background: transparent;
+    }
+    .batch-bar .btn:hover { background: rgba(255,255,255,0.15); }
+    .batch-bar .btn-danger { border-color: #fff; }
+    .batch-bar .btn-danger:hover { background: rgba(255,255,255,0.2); }
+
+    .select-all-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #666;
+    }
+    .select-all-bar label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .select-all-bar input { width: 14px; height: 14px; accent-color: #1a73e8; cursor: pointer; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; margin-bottom: 4px; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 600px) {
+      .container { padding: 12px; }
+      .form-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>M3U8 下载管理器</h1>
+    <div class="stats">
+      <span id="activeCount">进行中: 0</span>
+      <span id="completedCount">已完成: 0</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="add-form">
+      <h3>新建下载任务</h3>
+      <div class="form-row">
+        <div class="form-group" style="flex:3;min-width:300px;">
+          <label>M3U8 地址</label>
+          <input type="text" id="taskUrl" placeholder="https://example.com/video.m3u8">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>文件名</label>
+          <input type="text" id="taskFilename" placeholder="video.mp4" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label>保存目录</label>
+          <div class="input-with-btn">
+            <input type="text" id="taskSavePath" placeholder="E:\Downloads">
+            <button class="btn" id="browseBtn">...</button>
+          </div>
+        </div>
+        <div class="form-group" style="max-width:120px;">
+          <label>下载模式</label>
+          <select id="taskMode">
+            <option value="mp4">MP4</option>
+            <option value="m3u8">M3U8</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="addTaskBtn">添加任务</button>
+        <button class="btn btn-success" id="addAndStartBtn">添加并开始下载</button>
+      </div>
+    </div>
+
+    <div class="task-list">
+      <h3>下载任务 (<span id="taskTotal">0</span>)</h3>
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="搜索文件名或 URL...">
+        <div class="status-filter">
+          <select id="statusFilter">
+            <option value="all">全部状态</option>
+            <option value="downloading">下载中</option>
+            <option value="completed">已完成</option>
+            <option value="failed">失败</option>
+            <option value="pending">等待中</option>
+            <option value="paused">已暂停</option>
+          </select>
+        </div>
+      </div>
+      <div class="batch-bar" id="batchBar">
+        <span class="count" id="selectedCount">已选择 0 项</span>
+        <button class="btn btn-success" id="batchStartBtn">批量开始</button>
+        <button class="btn" id="batchRetryBtn">批量重试</button>
+        <button class="btn" id="batchCancelBtn">批量取消</button>
+        <button class="btn btn-danger" id="batchRemoveBtn">批量删除</button>
+        <button class="btn" id="batchClearBtn">取消选择</button>
+      </div>
+      <div class="select-all-bar" id="selectAllBar">
+        <label><input type="checkbox" id="selectAllCheck"> 全选</label>
+        <span style="color:#ccc;">|</span>
+        <span>勾选后可使用批量操作</span>
+      </div>
+      <div id="taskContainer">
+        <div class="empty-state">
+          <div class="icon">📥</div>
+          <p>暂无下载任务</p>
+          <p style="font-size:12px;">从弹窗嗅探列表添加，或手动输入 m3u8 地址</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="manager.js"></script>
+</body>
+</html>
