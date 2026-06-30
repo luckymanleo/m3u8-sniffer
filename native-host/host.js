@@ -614,7 +614,8 @@ function formatSpeed(bytesPerSec) {
 
 // ── 主下载流程 ──
 async function doDownload(task) {
-  const { taskId, url, filename, savePath, mode, headers, referer, cookieHeader } = task;
+  const { taskId, url, filename, savePath: rawSavePath, mode, headers, referer, cookieHeader } = task;
+  const savePath = rawSavePath || path.join(__dirname, '..');
   // 构建带 Referer 和 Cookie 的请求头（防盗链 + 鉴权）
   const dlHeaders = { ...(headers || {}) };
   if (referer) {

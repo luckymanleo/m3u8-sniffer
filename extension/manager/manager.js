@@ -156,7 +156,7 @@ function addTask(url, filename, savePath, mode) {
     filename = guessFilename(url);
   }
   if (!savePath) {
-    savePath = 'E:\\\\Downloads';
+    savePath = '';
   }
 
   const task = {
