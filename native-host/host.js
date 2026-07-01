@@ -549,7 +549,7 @@ function mergeToMp4(tsFiles, outputPath, signal) {
     fs.writeFileSync(listPath, listContent, 'utf8');
 
     const args = [
-      '-fflags', '+genpts+igndts+discardcorrupt',
+      '-fflags', '+genpts+igndts',
       '-err_detect', 'ignore_err',
       '-avoid_negative_ts', 'make_zero',
       '-f', 'concat', '-safe', '0', '-i', listPath,
@@ -578,30 +578,6 @@ function mergeToMp4(tsFiles, outputPath, signal) {
         reject(new Error(tail.substring(0, 300)));
         return;
       }
-
-      // 检查 stderr 中是否有帧丢弃/时间戳损坏警告（ffmpeg 退出码为 0 但视频不完整）
-      const stderrStr = (stderr || '').toLowerCase();
-      const corruptPatterns = [
-        /discard(?:ing|ed)?\s+(?:corrupt|packet)/i,
-        /corrupt\s+(?:decoded|packet|frame|stream)/i,
-        /pts\s+has\s+no\s+value/i,
-        /non-monotonous\s+dts/i,
-        /duration.*out\s+of\s+range/i,
-        /timestamp.*out\s+of\s+range/i,
-        /coded\s+picture\s+timing/i,
-      ];
-      const matched = corruptPatterns.find(p => p.test(stderrStr));
-      if (matched) {
-        const lines = stderrStr.split(/\r?\n/);
-        const errorLines = lines.filter(l => /discard|corrupt|pts|dts|duration|timestamp|coded picture/i.test(l));
-        const detail = errorLines.slice(0, 3).join('; ');
-        log('ffmpeg completed with corrupt frame warnings: ' + detail);
-        // 删除不完整的输出文件
-        try { fs.unlinkSync(outputPath); } catch {}
-        reject(new Error('视频流时间戳损坏，合并后不完整 — 源文件有问题'));
-        return;
-      }
-
       resolve();
     });
 
@@ -727,10 +703,19 @@ async function doDownload(task) {
       emit({ type: 'progress', percent: 95, downloaded: 0, total: 0, speed: '', eta: '合并中...' });
       await mergeToMp4(tsFiles, outputPath, controller.signal);
 
+      // 验证合并后文件大小
+      const totalSegBytes = tsFiles.reduce((sum, f) => sum + fs.statSync(f).size, 0);
+      const outSize = fs.statSync(outputPath).size;
+      if (totalSegBytes > 0 && outSize < totalSegBytes * 0.7) {
+        log(`Merge-only output too small: ${outSize} bytes vs ${totalSegBytes} segment bytes`);
+        try { fs.unlinkSync(outputPath); } catch {}
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+        throw new Error(`合并后文件异常小（${(outSize / 1048576).toFixed(1)} MB vs 分片总计 ${(totalSegBytes / 1048576).toFixed(1)} MB），视频流可能已损坏`);
+      }
+
       fs.rmSync(tmpDir, { recursive: true, force: true });
-      const stat = fs.statSync(outputPath);
-      log(`Merge-only complete: ${outputPath} (${stat.size} bytes)`);
-      emit({ type: 'complete', filePath: outputPath, size: stat.size });
+      log(`Merge-only complete: ${outputPath} (${outSize} bytes)`);
+      emit({ type: 'complete', filePath: outputPath, size: outSize });
       return;
     }
 
@@ -906,6 +891,16 @@ async function doDownload(task) {
 
     await mergeToMp4(okFiles, outputPath, controller.signal);
 
+    // 验证合并后的文件大小：如果远小于分片总大小，说明数据损坏
+    const totalSegmentBytes = okFiles.reduce((sum, f) => sum + fs.statSync(f).size, 0);
+    const outputSize = fs.statSync(outputPath).size;
+    if (totalSegmentBytes > 0 && outputSize < totalSegmentBytes * 0.7) {
+      log(`Merged output too small: ${outputSize} bytes vs ${totalSegmentBytes} segment bytes`);
+      try { fs.unlinkSync(outputPath); } catch {}
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+      throw new Error(`合并后文件异常小（${(outputSize / 1048576).toFixed(1)} MB vs 分片总计 ${(totalSegmentBytes / 1048576).toFixed(1)} MB），视频流可能已损坏`);
+    }
+
     // 7. 清理
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -913,10 +908,8 @@ async function doDownload(task) {
       log('Cleanup warning: ' + e.message);
     }
 
-    const stat = fs.statSync(outputPath);
-    log(`Complete: ${outputPath} (${stat.size} bytes)`);
-
-    emit({ type: 'complete', filePath: outputPath, size: stat.size });
+    log(`Complete: ${outputPath} (${outputSize} bytes)`);
+    emit({ type: 'complete', filePath: outputPath, size: outputSize });
   } catch (err) {
     if (err.message === 'CANCELLED') {
       log('Download cancelled by user: ' + taskId);
