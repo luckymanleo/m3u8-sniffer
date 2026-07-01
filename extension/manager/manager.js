@@ -512,7 +512,8 @@ function renderTasks() {
         <div class="progress-bar">
           <div class="progress-fill ${pgClass}" style="width:${pgWidth}%"></div>
         </div>
-        ${task.error ? `<div style="font-size:12px;color:#d93025;margin-bottom:6px;">${escapeHtml(task.error)}</div>` : ''}
+        ${task.error ? `<div style="font-size:12px;color:#d93025;margin-bottom:4px;">${escapeHtml(task.error)}</div>` : ''}
+        ${task.error ? `<div style="margin-bottom:6px;"><button class="btn btn-mini" data-action="copyError" data-id="${task.id}">复制错误日志</button></div>` : ''}
         <div class="task-actions">${actionBtns}</div>
       </div>
     </div>`;
@@ -558,6 +559,21 @@ function renderTasks() {
       const task = tasks.find(t => t.id === btn.dataset.id);
       if (task && task.pageUrl) {
         navigator.clipboard.writeText(task.pageUrl).then(() => showToast('原始页面地址已复制'));
+      }
+    });
+  });
+  taskContainer.querySelectorAll('[data-action="copyError"]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const task = tasks.find(t => t.id === btn.dataset.id);
+      if (task && task.error) {
+        const log = [
+          `文件名: ${task.filename}`,
+          `地址: ${task.url}`,
+          `错误: ${task.error}`,
+          `时间: ${new Date().toLocaleString()}`
+        ].join('\n');
+        navigator.clipboard.writeText(log).then(() => showToast('错误日志已复制'));
       }
     });
   });

@@ -578,6 +578,30 @@ function mergeToMp4(tsFiles, outputPath, signal) {
         reject(new Error(tail.substring(0, 300)));
         return;
       }
+
+      // 检查 stderr 中是否有帧丢弃/时间戳损坏警告（ffmpeg 退出码为 0 但视频不完整）
+      const stderrStr = (stderr || '').toLowerCase();
+      const corruptPatterns = [
+        /discard(?:ing|ed)?\s+(?:corrupt|packet)/i,
+        /corrupt\s+(?:decoded|packet|frame|stream)/i,
+        /pts\s+has\s+no\s+value/i,
+        /non-monotonous\s+dts/i,
+        /duration.*out\s+of\s+range/i,
+        /timestamp.*out\s+of\s+range/i,
+        /coded\s+picture\s+timing/i,
+      ];
+      const matched = corruptPatterns.find(p => p.test(stderrStr));
+      if (matched) {
+        const lines = stderrStr.split(/\r?\n/);
+        const errorLines = lines.filter(l => /discard|corrupt|pts|dts|duration|timestamp|coded picture/i.test(l));
+        const detail = errorLines.slice(0, 3).join('; ');
+        log('ffmpeg completed with corrupt frame warnings: ' + detail);
+        // 删除不完整的输出文件
+        try { fs.unlinkSync(outputPath); } catch {}
+        reject(new Error('视频流时间戳损坏，合并后不完整 — 源文件有问题'));
+        return;
+      }
+
       resolve();
     });
 
