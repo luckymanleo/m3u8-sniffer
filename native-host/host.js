@@ -549,7 +549,9 @@ function mergeToMp4(tsFiles, outputPath, signal) {
     fs.writeFileSync(listPath, listContent, 'utf8');
 
     const args = [
-      '-fflags', '+genpts+igndts',
+      '-fflags', '+genpts+igndts+discardcorrupt',
+      '-err_detect', 'ignore_err',
+      '-avoid_negative_ts', 'make_zero',
       '-f', 'concat', '-safe', '0', '-i', listPath,
       '-map', '0', '-c', 'copy', '-bsf:a', 'aac_adtstoasc',
       '-movflags', '+faststart', '-y', outputPath
