@@ -152,12 +152,36 @@ function addTask(url, filename, savePath, mode) {
     showToast('Please use a sniffed m3u8/media URL, not the original web page URL. Play the video first, then click Download from the extension popup list.');
     return null;
   }
-  // 去重：相同 URL 不重复添加
+  // 去重：相同 URL 不重复添加，复用已有任务重新下载
   const existing = tasks.find(t => t.url === url);
   if (existing) {
-    const statusMap = { completed: '已完成', downloading: '下载中', pending: '等待中', failed: '失败', paused: '已暂停' };
-    showToast(`该地址已存在（${statusMap[existing.status] || existing.status}），跳过重复添加`);
-    return null;
+    if (existing.status === 'downloading') {
+      showToast('该地址正在下载中，跳过重复添加');
+      return null;
+    }
+    // 删除旧文件
+    deleteLocalFiles(existing);
+    // 重置任务状态
+    Object.assign(existing, {
+      status: 'pending',
+      percent: 0,
+      error: '',
+      downloaded: '0',
+      total: '?',
+      speed: '',
+      eta: '',
+      filePath: '',
+      mergeFailed: false,
+      createdAt: Date.now()
+    });
+    if (savePath) existing.savePath = savePath;
+    if (filename) existing.filename = filename;
+    if (mode) existing.mode = mode;
+    saveTasks();
+    renderTasks();
+    showToast('重新下载已有任务');
+    startDownload(existing.id, false, true);
+    return existing;
   }
   if (!filename) {
     filename = guessFilename(url);
@@ -190,15 +214,15 @@ function addTask(url, filename, savePath, mode) {
   return task;
 }
 
-function startDownload(taskId, mergeOnly) {
+function startDownload(taskId, mergeOnly, cleanTemp) {
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
   if (task.status === 'downloading') return;
   if (task.status === 'completed') return;
 
   const wasFailed = task.status === 'failed';
-  // 重试时保留已下载分片，仅续传缺失部分
-  const cleanTemp = false;
+  // 重试时保留已下载分片，仅续传缺失部分；强制重下时清除旧分片
+  const doCleanTemp = cleanTemp ? true : false;
   updateTask(taskId, { status: 'downloading', percent: 0, error: '', downloaded: '0', speed: '', eta: '' });
 
   chrome.runtime.sendMessage({
@@ -208,7 +232,7 @@ function startDownload(taskId, mergeOnly) {
     filename: task.filename,
     savePath: task.savePath,
     mode: task.mode,
-    cleanTemp: cleanTemp,
+    cleanTemp: doCleanTemp,
     mergeOnly: !!mergeOnly
   }, (response) => {
     if (chrome.runtime.lastError) {
