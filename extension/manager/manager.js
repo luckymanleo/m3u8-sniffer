@@ -152,6 +152,13 @@ function addTask(url, filename, savePath, mode) {
     showToast('Please use a sniffed m3u8/media URL, not the original web page URL. Play the video first, then click Download from the extension popup list.');
     return null;
   }
+  // 去重：相同 URL 不重复添加
+  const existing = tasks.find(t => t.url === url);
+  if (existing) {
+    const statusMap = { completed: '已完成', downloading: '下载中', pending: '等待中', failed: '失败', paused: '已暂停' };
+    showToast(`该地址已存在（${statusMap[existing.status] || existing.status}），跳过重复添加`);
+    return null;
+  }
   if (!filename) {
     filename = guessFilename(url);
   }

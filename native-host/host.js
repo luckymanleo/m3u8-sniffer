@@ -670,6 +670,20 @@ async function doDownload(task) {
     const outputPath = path.join(savePath, filename);
     log(`Download: ${url} → ${outputPath} (mode: ${mode})`);
 
+    // 非重试场景下，如果输出文件已存在则跳过（避免重复下载覆盖已有文件）
+    if (!task.cleanTemp && !task.mergeOnly && fs.existsSync(outputPath)) {
+      const stat = fs.statSync(outputPath);
+      if (stat.size > 0) {
+        log(`Output file already exists, skipping download: ${outputPath} (${stat.size} bytes)`);
+        const emit = (msg) => sendMessage({ ...msg, taskId });
+        emit({ type: 'complete', filePath: outputPath, size: stat.size });
+        return;
+      }
+      // 文件存在但大小为 0 → 删除残留，重新下载
+      log(`Output file exists but empty, removing: ${outputPath}`);
+      try { fs.unlinkSync(outputPath); } catch {}
+    }
+
     // 检测代理 URL（如 yutujx.com/?url=REAL.m3u8），提取真实地址用于类型检测
     const originalUrl = url;
     let actualUrl = extractProxyUrl(url);
